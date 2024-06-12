@@ -4,14 +4,13 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from forms import RegistrationForm, LoginForm
 from utils import fetch_random_movies, fetch_movie_details, OMDB_API_KEY
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import WatchedMovie, FavoriteMovie
+from models import WatchedMovie, User
 import requests
+
 
 def movie_already_watched(imdb_id):
     return WatchedMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
 
-def movie_already_favorite(imdb_id):
-    return FavoriteMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -20,46 +19,41 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
-    favorite_movies = db.relationship('Movie', backref='favorited_by', lazy=True)
     watched_movies = db.relationship('WatchedMovie', backref='watched_by', lazy=True)
 
-class Movie(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    genre = db.Column(db.String(50), nullable=False)
-    director = db.Column(db.String(50), nullable=False)
-    year = db.Column(db.String(4), nullable=False)
-    rating = db.Column(db.String(10), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class WatchedMovie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    imdb_id = db.Column(db.String(20), nullable=False)
     title = db.Column(db.String(100), nullable=False)
     genre = db.Column(db.String(50), nullable=False)
     director = db.Column(db.String(50), nullable=False)
     year = db.Column(db.String(4), nullable=False)
     rating = db.Column(db.String(10), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    imdb_id = db.Column(db.String(20), nullable=False)
+    is_favorite = db.Column(db.Boolean, default=False)
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 @app.route('/')
 def home():
     movies = fetch_random_movies()
     if current_user.is_authenticated:
         watched_titles = [movie.title for movie in current_user.watched_movies]
-        favorite_titles = [movie.title for movie in current_user.favorite_movies]
-        excluded_titles = set(watched_titles + favorite_titles)
+        excluded_titles = set(watched_titles)
         movies = [movie for movie in movies if movie['Title'] not in excluded_titles]
     return render_template('index.html', movies=movies)
+
 
 @app.route("/search")
 def search():
@@ -82,20 +76,15 @@ def search():
         movies = []
         print("No query provided")  # Debugging print statement
 
-    def movie_already_watched(imdb_id):
-        return WatchedMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
-
-    def movie_already_favorite(imdb_id):
-        return FavoriteMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
-
-    return render_template('search_results.html', movies=movies, movie_already_watched=movie_already_watched, movie_already_favorite=movie_already_favorite)
+    return render_template('search_results.html', movies=movies)
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        existing_user = User.query.filter((User.username == form.username.data) | (User.email == form.email.data)).first()
+        existing_user = User.query.filter(
+            (User.username == form.username.data) | (User.email == form.email.data)).first()
         if existing_user:
             flash('Username or email already exists. Please choose a different one.', 'danger')
             return redirect(url_for('register'))
@@ -109,6 +98,7 @@ def register():
         if request.method == 'POST':
             flash('Error in form submission. Please check your details and try again.', 'danger')
     return render_template('register.html', form=form)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -126,16 +116,17 @@ def login():
             flash('Error in form submission. Please check your details and try again.', 'danger')
     return render_template('login.html', form=form)
 
+
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('home'))
 
+
 @app.route('/watched')
 @login_required
 def watched():
     watched_movies = current_user.watched_movies
-    favorite_movies = current_user.favorite_movies
     genres = {}
     ratings_over_decades = {}
     for movie in watched_movies:
@@ -155,9 +146,9 @@ def watched():
     avg_ratings = [sum(ratings_over_decades[decade]) / len(ratings_over_decades[decade]) for decade in decades_list]
     genres_keys = list(genres.keys())
     genres_values = list(genres.values())
-    return render_template('watched.html', watched_movies=watched_movies, favorite_movies=favorite_movies,
-                           genres_keys=genres_keys, genres_values=genres_values,
-                           ratings_decades=decades_list, avg_ratings=avg_ratings)
+    return render_template('watched.html', watched_movies=watched_movies, genres_keys=genres_keys,
+                           genres_values=genres_values, ratings_decades=decades_list, avg_ratings=avg_ratings)
+
 
 @app.route('/add_to_favorites/<string:movie_id>')
 @login_required
@@ -167,33 +158,25 @@ def add_to_favorites(movie_id):
         flash('Error fetching movie details.', 'danger')
         return redirect(url_for('home'))
 
-    existing_favorite = FavoriteMovie.query.filter_by(imdb_id=movie_id, user_id=current_user.id).first()
-    if existing_favorite:
-        flash('This movie is already in your favorites.', 'info')
+    watched_movie = WatchedMovie.query.filter_by(imdb_id=movie_id, user_id=current_user.id).first()
+    if watched_movie:
+        watched_movie.is_favorite = True
     else:
-        favorite_movie = FavoriteMovie(
-            user_id=current_user.id,
-            imdb_id=movie_id
-        )
-        db.session.add(favorite_movie)
-        db.session.commit()
-        flash('Movie added to favorites!', 'success')
-
-    # Also add to watched list if not already there
-    existing_watched = WatchedMovie.query.filter_by(imdb_id=movie_id, user_id=current_user.id).first()
-    if not existing_watched:
         watched_movie = WatchedMovie(
+            user_id=current_user.id,
+            imdb_id=movie_id,
             title=movie['Title'],
             genre=movie['Genre'],
             director=movie['Director'],
             year=movie['Year'],
             rating=movie.get('imdbRating', 'Unrated'),
-            user_id=current_user.id,
-            imdb_id=movie_id
+            is_favorite=True
         )
         db.session.add(watched_movie)
-        db.session.commit()
-    return redirect(url_for('watched'))
+
+    db.session.commit()
+    flash('Movie added to favorites!', 'success')
+    return redirect(url_for('home'))
 
 
 @app.route('/add_to_watched/<string:movie_id>')

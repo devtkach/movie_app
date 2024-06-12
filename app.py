@@ -76,7 +76,8 @@ def search():
         movies = []
         print("No query provided")  # Debugging print statement
 
-    return render_template('search_results.html', movies=movies)
+    return render_template('search_results.html', movies=movies, movie_already_watched=movie_already_watched)
+
 
 
 @app.route('/register', methods=['GET', 'POST'])

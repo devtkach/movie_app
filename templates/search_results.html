@@ -1,31 +1,31 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <div class="container">
-        <h1>Search Results</h1>
-        <div class="row">
-            {% for movie in movies %}
-                <div class="col-md-4">
-                    <div class="card mb-4 shadow-sm">
-                        <img src="{{ movie.Poster }}" class="card-img-top" alt="{{ movie.Title }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ movie.Title }}</h5>
-                            <p class="card-text">{{ movie.Year }}</p>
-                            {% if movie_already_watched(movie.imdbID) %}
-                                <button class="btn btn-secondary" disabled>Movie is already in watched</button>
-                            {% elif movie_already_favorite(movie.imdbID) %}
-                                <button class="btn btn-secondary" disabled>Movie is already in favorite</button>
-                            {% else %}
-                                <form action="{{ url_for('add_to_favorites', movie_id=movie.imdbID) }}" method="GET">
-                                    <button class="btn btn-primary" type="submit">Add to Favorites</button>
-                                </form>
-                                <form action="{{ url_for('add_to_watched', movie_id=movie.imdbID) }}" method="GET">
-                                    <button class="btn btn-secondary" type="submit">Add to Watched</button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+  <div class="container">
+    <h1>Search Results</h1>
+    <div class="row">
+      {% for movie in movies %}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <img src="{{ movie.Poster }}" class="card-img-top" alt="{{ movie.Title }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ movie.Title }}</h5>
+              <p class="card-text">{{ movie.Year }}</p>
+              {% if movie_already_watched(movie.imdbID) %}
+                {% set watched_movie = current_user.watched_movies | selectattr("imdb_id", "equalto", movie.imdbID) | first %}
+                {% if watched_movie.is_favorite %}
+                  <button class="btn btn-secondary" disabled>Movie is already in favorite</button>
+                {% else %}
+                  <a href="{{ url_for('add_to_favorites', movie_id=movie.imdbID) }}" class="btn btn-primary">Add to Favorites</a>
+                {% endif %}
+                <button class="btn btn-secondary" disabled>Movie is already in watched</button>
+              {% else %}
+                <a href="{{ url_for('add_to_watched', movie_id=movie.imdbID) }}" class="btn btn-secondary">Add to Watched</a>
+              {% endif %}
+            </div>
+          </div>
         </div>
+      {% endfor %}
     </div>
+  </div>
 {% endblock %}

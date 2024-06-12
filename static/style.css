@@ -1,0 +1,37 @@
+body {
+}
+
+.card {
+    margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.tab-content {
+    margin-top: 20px;
+}
+
+.container {
+    max-width: 960px;
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.chart-container {
+    margin: 2rem auto;
+    display: flex;
+    justify-content: center;
+    height: 500px;
+    width: 100%;
+}
+

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Personalized information</h1>
+
+  <!-- Tabs for switching between watched movies, favorite movies, and statistics -->
+  <ul class="nav nav-tabs" id="mainTab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="watched-tab" data-toggle="tab" href="#watched" role="tab" aria-controls="watched" aria-selected="true">Watched Movies</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="favorites-tab" data-toggle="tab" href="#favorites" role="tab" aria-controls="favorites" aria-selected="false">Favorites</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="statistics-tab" data-toggle="tab" href="#statistics" role="tab" aria-controls="statistics" aria-selected="false">Statistics</a>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="mainTabContent">
+    <div class="tab-pane fade show active" id="watched" role="tabpanel" aria-labelledby="watched-tab">
+      <h2 class="mb-4">Watched Movies</h2>
+      <ul>
+        {% for movie in watched_movies %}
+          <li>{{ movie.title }} ({{ movie.year }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="tab-pane fade" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
+      <h2 class="mb-4">Favorite Movies</h2>
+      <ul>
+        {% for movie in favorite_movies %}
+          <li>{{ movie.title }} ({{ movie.year }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="tab-pane fade" id="statistics" role="tabpanel" aria-labelledby="statistics-tab">
+      <h2 class="mb-4">Your Statistics</h2>
+      <ul class="nav nav-tabs" id="statisticsTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="genres-stat-tab" data-toggle="tab" href="#genres-stat" role="tab" aria-controls="genres-stat" aria-selected="true">Genres</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="ratings-decade-stat-tab" data-toggle="tab" href="#ratings-decade-stat" role="tab" aria-controls="ratings-decade-stat" aria-selected="false">Ratings Over Decades</a>
+        </li>
+      </ul>
+      <div class="tab-content" id="statisticsTabContent">
+        <div class="tab-pane fade show active" id="genres-stat" role="tabpanel" aria-labelledby="genres-stat-tab">
+          <div class="chart-container">
+            <canvas id="genresChart"></canvas>
+            <script type="application/json" id="genresLabels">{{ genres_keys|tojson }}</script>
+            <script type="application/json" id="genresData">{{ genres_values|tojson }}</script>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="ratings-decade-stat" role="tabpanel" aria-labelledby="ratings-decade-stat-tab">
+          <div class="chart-container">
+            <canvas id="ratingsDecadesChart"></canvas>
+            <script type="application/json" id="ratingsDecadesLabels">{{ ratings_decades|tojson }}</script>
+            <script type="application/json" id="avgRatingsData">{{ avg_ratings|tojson }}</script>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include custom charts JavaScript file -->
+  <script src="{{ url_for('static', filename='charts.js') }}"></script>
+{% endblock %}

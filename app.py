@@ -168,7 +168,7 @@ def add_to_favorites(movie_id):
             imdb_id=movie_id,
             title=movie['Title'],
             genre=movie['Genre'],
-            director=movie['Director'],
+            director=movie.get('Director', 'Unknown'),  # Use get method with a default value
             year=movie['Year'],
             rating=movie.get('imdbRating', 'Unrated'),
             is_favorite=True
@@ -178,7 +178,6 @@ def add_to_favorites(movie_id):
     db.session.commit()
     flash('Movie added to favorites!', 'success')
     return redirect(url_for('home'))
-
 
 @app.route('/add_to_watched/<string:movie_id>')
 @login_required
@@ -195,7 +194,7 @@ def add_to_watched(movie_id):
         watched_movie = WatchedMovie(
             title=movie['Title'],
             genre=movie['Genre'],
-            director=movie['Director'],
+            director=movie.get('Director', 'Unknown'),  # Use get method with a default value
             year=movie['Year'],
             rating=movie.get('imdbRating', 'Unrated'),
             user_id=current_user.id,

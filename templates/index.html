@@ -8,8 +8,10 @@
                 <div class="card">
                     <img src="{{ movie.Poster }}" class="card-img-top" alt="...">
                     <div class="card-body">
-                        <h5 class="card-title">{{ movie.Title }}</h5>
+                       <h5 class="card-title">{{ movie.Title }}</h5>
                         <p class="card-text">Year: {{ movie.Year }}</p>
+                        <p class="card-text">Rating: {{ movie.imdbRating }}</p>
+                        <p class="card-text">Genre: {{ movie.Genre }}</p>
                         <a href="{{ url_for('add_to_favorites', movie_id=movie.imdbID) }}" class="btn btn-primary">Add to Favorites</a>
                         <a href="{{ url_for('add_to_watched', movie_id=movie.imdbID) }}" class="btn btn-secondary">Add to Watched</a>
                     </div>

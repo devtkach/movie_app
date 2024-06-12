@@ -34,4 +34,21 @@ body {
     height: 500px;
     width: 100%;
 }
-
+.card {
+    img {
+        height: 300px;
+        object-fit: cover;
+    }
+}
+.card-body {
+        padding: 1.25rem 0.50rem;
+    p {
+        margin-bottom: 0;
+    }
+    a:first-child {
+        margin-top: 20px;
+    }
+    a:not(:first-child) {
+        margin-top: 10px;
+    }
+}

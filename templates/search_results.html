@@ -21,6 +21,7 @@
                 <button class="btn btn-secondary" disabled>Movie is already in watched</button>
               {% else %}
                 <a href="{{ url_for('add_to_watched', movie_id=movie.imdbID) }}" class="btn btn-secondary">Add to Watched</a>
+                  <a href="{{ url_for('add_to_favorites', movie_id=movie.imdbID) }}" class="btn btn-primary">Add to Favorites</a>
               {% endif %}
             </div>
           </div>

@@ -27,19 +27,17 @@ def fetch_movie_details(movie_id):
     response = requests.get(url)
     if response.status_code == 200:
         movie_data = response.json()
-        print(f"Fetched movie details: {movie_data}")  # Debug print
         if movie_data['Response'] == 'True':
             return {
                 'Title': movie_data.get('Title'),
                 'Year': movie_data.get('Year'),
                 'imdbRating': movie_data.get('imdbRating'),
                 'Genre': movie_data.get('Genre'),
+                'Director': movie_data.get('Director', 'Unknown'),
                 'Poster': movie_data.get('Poster'),
                 'imdbID': movie_id
             }
         else:
-            print(f"Error fetching movie details: {movie_data['Error']}")  # Debug print
             return None
     else:
-        print(f"Error fetching movie details: {response.status_code}")  # Debug print
         return None

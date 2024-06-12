@@ -147,8 +147,13 @@ def watched():
     avg_ratings = [sum(ratings_over_decades[decade]) / len(ratings_over_decades[decade]) for decade in decades_list]
     genres_keys = list(genres.keys())
     genres_values = list(genres.values())
-    return render_template('watched.html', watched_movies=watched_movies, genres_keys=genres_keys,
-                           genres_values=genres_values, ratings_decades=decades_list, avg_ratings=avg_ratings)
+
+    favorite_movies = [movie for movie in watched_movies if movie.is_favorite]
+    non_favorite_movies = [movie for movie in watched_movies if not movie.is_favorite]
+
+    return render_template('watched.html', watched_movies=non_favorite_movies, favorite_movies=favorite_movies,
+                           genres_keys=genres_keys, genres_values=genres_values, ratings_decades=decades_list,
+                           avg_ratings=avg_ratings, OMDB_API_KEY=OMDB_API_KEY)
 
 
 @app.route('/add_to_favorites/<string:movie_id>')
@@ -177,7 +182,7 @@ def add_to_favorites(movie_id):
 
     db.session.commit()
     flash('Movie added to favorites!', 'success')
-    return redirect(url_for('home'))
+    return redirect(url_for('watched'))
 
 @app.route('/add_to_watched/<string:movie_id>')
 @login_required

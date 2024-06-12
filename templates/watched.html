@@ -19,19 +19,39 @@
   <div class="tab-content" id="mainTabContent">
     <div class="tab-pane fade show active" id="watched" role="tabpanel" aria-labelledby="watched-tab">
       <h2 class="mb-4">Watched Movies</h2>
-      <ul>
+      <div class="row">
         {% for movie in watched_movies %}
-          <li>{{ movie.title }} ({{ movie.year }})</li>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+          <div class="card">
+            <img class="card-img-top" src="https://img.omdbapi.com/?i={{ movie.imdb_id }}&apikey={{ OMDB_API_KEY }}" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">{{ movie.title }}</h5>
+              <p class="card-text">Year: {{ movie.year }}</p>
+              <p class="card-text">Rating: {{ movie.rating }}</p>
+              <p class="card-text">Genre: {{ movie.genre }}</p>
+            </div>
+          </div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
     <div class="tab-pane fade" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
       <h2 class="mb-4">Favorite Movies</h2>
-      <ul>
-        {% for movie in watched_movies if movie.is_favorite %}
-          <li>{{ movie.title }} ({{ movie.year }})</li>
+      <div class="row">
+        {% for movie in favorite_movies %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+          <div class="card">
+            <img class="card-img-top" src="https://img.omdbapi.com/?i={{ movie.imdb_id }}&apikey={{ OMDB_API_KEY }}" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">{{ movie.title }}</h5>
+              <p class="card-text">Year: {{ movie.year }}</p>
+              <p class="card-text">Rating: {{ movie.rating }}</p>
+              <p class="card-text">Genre: {{ movie.genre }}</p>
+            </div>
+          </div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
     <div class="tab-pane fade" id="statistics" role="tabpanel" aria-labelledby="statistics-tab">
       <h2 class="mb-4">Your Statistics</h2>

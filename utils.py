@@ -23,7 +23,7 @@ def fetch_random_movies():
         return []
 
 def fetch_movie_details(movie_id):
-    url = f'http://www.omdbapi.com/?i={movie_id}&apikey={OMDB_API_KEY}'
+    url = f"http://www.omdbapi.com/?i={movie_id}&apikey={OMDB_API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
         movie_data = response.json()
@@ -41,3 +41,4 @@ def fetch_movie_details(movie_id):
             return None
     else:
         return None
+

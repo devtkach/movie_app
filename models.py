@@ -17,7 +17,10 @@ class Movie(db.Model):
     director = db.Column(db.String(50), nullable=False)
     year = db.Column(db.String(4), nullable=False)
     rating = db.Column(db.String(10), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    poster = db.Column(db.String(200), nullable=True)
+    imdb_id = db.Column(db.String(20), nullable=False, unique=True)  # Added imdb_id field
+
+
 
 class WatchedMovie(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -4,12 +4,8 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from forms import RegistrationForm, LoginForm
 from utils import fetch_random_movies, fetch_movie_details, OMDB_API_KEY
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import WatchedMovie, User
+from models import WatchedMovie, User, Movie
 import requests
-
-
-def movie_already_watched(imdb_id):
-    return WatchedMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
 
 
 app = Flask(__name__)
@@ -28,6 +24,18 @@ class User(UserMixin, db.Model):
     watched_movies = db.relationship('WatchedMovie', backref='watched_by', lazy=True)
 
 
+class Movie(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    genre = db.Column(db.String(50), nullable=False)
+    director = db.Column(db.String(50), nullable=False)
+    year = db.Column(db.String(4), nullable=False)
+    rating = db.Column(db.String(10), nullable=True)
+    poster = db.Column(db.String(200), nullable=True)
+    imdb_id = db.Column(db.String(20), nullable=False, unique=True)  # Added imdb_id field
+
+
+
 class WatchedMovie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -38,6 +46,71 @@ class WatchedMovie(db.Model):
     year = db.Column(db.String(4), nullable=False)
     rating = db.Column(db.String(10), nullable=True)
     is_favorite = db.Column(db.Boolean, default=False)
+
+def fetch_and_store_movies_based_on_genres(favorite_genres):
+    for genre in favorite_genres:
+        keyword = genre.lower()
+        url = f"http://www.omdbapi.com/?s={keyword}&type=movie&apikey={OMDB_API_KEY}"
+        response = requests.get(url)
+        data = response.json()
+
+        if data['Response'] == 'True':
+            movies = data['Search']
+            for movie in movies:
+                movie_id = movie['imdbID']
+                details = fetch_movie_details(movie_id)
+                if details and not Movie.query.filter_by(imdb_id=movie_id).first():
+                    new_movie = Movie(
+                        title=details['Title'],
+                        genre=details['Genre'],
+                        director=details.get('Director', 'Unknown'),
+                        year=details['Year'],
+                        rating=details.get('imdbRating', 'Unrated'),
+                        poster=details['Poster'],
+                        imdb_id=details['imdbID']  # Added imdb_id field
+                    )
+                    db.session.add(new_movie)
+            db.session.commit()
+
+def generate_recommendations(watched_movies, favorite_movies):
+    favorite_genres = {genre.strip() for movie in favorite_movies for genre in movie.genre.split(',')}
+    watched_movie_titles = {movie.title for movie in watched_movies}
+
+    # Fetch new movies based on favorite genres
+    fetch_and_store_movies_based_on_genres(favorite_genres)
+
+    # Log database content for debugging
+    all_movies = Movie.query.all()
+    print("All Movies in the Database:")
+    for movie in all_movies:
+        print(f"Title: {movie.title}, Genre: {movie.genre}")
+
+    # Recommend movies from the same genres that the user hasn't watched yet
+    recommended_movies = Movie.query.filter(
+        Movie.genre.in_(favorite_genres),
+        ~Movie.title.in_(watched_movie_titles)
+    ).all()
+
+    return recommended_movies
+
+def movie_already_watched(imdb_id):
+    return WatchedMovie.query.filter_by(user_id=current_user.id, imdb_id=imdb_id).first() is not None
+
+
+@app.route('/recommendations')
+@login_required
+def recommendations():
+    user = current_user
+
+    # Fetch watched and favorite movies
+    watched_movies = WatchedMovie.query.filter_by(user_id=user.id).all()
+    favorite_movies = WatchedMovie.query.filter_by(user_id=user.id, is_favorite=True).all()
+
+    # Generate recommendations
+    recommended_movies = generate_recommendations(watched_movies, favorite_movies)
+
+    return render_template('recommendations.html', recommended_movies=recommended_movies)
+
 
 
 @login_manager.user_loader
@@ -77,7 +150,6 @@ def search():
         print("No query provided")  # Debugging print statement
 
     return render_template('search_results.html', movies=movies, movie_already_watched=movie_already_watched)
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -184,6 +256,7 @@ def add_to_favorites(movie_id):
     flash('Movie added to favorites!', 'success')
     return redirect(url_for('watched'))
 
+
 @app.route('/add_to_watched/<string:movie_id>')
 @login_required
 def add_to_watched(movie_id):
@@ -209,6 +282,9 @@ def add_to_watched(movie_id):
         db.session.commit()
         flash('Movie added to watched list!', 'success')
     return redirect(url_for('watched'))
+
+
+
 
 
 if __name__ == '__main__':

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Recommended Movies</h1>
+<div class="row">
+    {% for movie in recommended_movies %}
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm">
+            <img class="card-img-top" src="{{ movie.poster }}" alt="{{ movie.title }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ movie.title }}</h5>
+                <p class="card-text"><strong>Genre:</strong> {{ movie.genre }}</p>
+                <p class="card-text"><strong>Director:</strong> {{ movie.director }}</p>
+                <p class="card-text"><strong>Year:</strong> {{ movie.year }}</p>
+                <p class="card-text"><strong>Rating:</strong> {{ movie.rating }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
